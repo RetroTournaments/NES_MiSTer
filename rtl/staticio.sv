@@ -46,8 +46,6 @@ assign tdata_m = 16'b1010_1100_1111_0001;
 reg [25:0] count;
 
 always @ (posedge clk) begin
-    rw <= 1'b0;
-    tw <= 1'b0;
     tdata_i <= 1'b0;
 
     if (reset) begin
