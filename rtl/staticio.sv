@@ -41,18 +41,39 @@ wire [15:0] rdata_m;
 wire txint;
 wire rxint;
 
+assign tdata_m = 16'b1010_1100_1111_0001;
+
+reg [25:0] count;
+
+always @ (posedge clk) begin
+    rw <= 1'b0;
+    tw <= 1'b0;
+    tdata_i <= 1'b0;
+
+    if (reset) begin
+        count <= 0;
+    end else begin
+        if (count == 25'd19_000_000) begin
+            tdata_i <= 1'b1;
+            count <= 0;
+        end else begin
+            count <= count + 1'b1;
+        end
+    end
+end
+
 staticio_uart staticu(
-	.clk(clk),
-	.reset(reset),
-	.tdata_i(tdata_i),
-	.data_i(tdata_m),
-	.data_o(rdata_m),
-	.uartbrk(1'b0),
-	.rbfmirror(1'b0),
-	.txint(txint),
-	.rxint(rxint),
-	.txd(txd),
-	.rxd(rxd)
+    .clk(clk),
+    .reset(reset),
+    .tdata_i(tdata_i),
+    .data_i(tdata_m),
+    .data_o(rdata_m),
+    .uartbrk(1'b0),
+    .rbfmirror(1'b0),
+    .txint(txint),
+    .rxint(rxint),
+    .txd(txd),
+    .rxd(rxd)
 );
 
 endmodule
@@ -128,7 +149,7 @@ always @ (posedge clk) begin
     if (reset) begin
       tx_state  <= #1 TX_IDLE;
       tx_txd    <= #1 1'b1;
-		tx_irq    <= #1 1'b0;
+        tx_irq    <= #1 1'b0;
       tx_tbe    <= #1 1'b1;
       tx_tsre   <= #1 1'b1;
     end else begin
@@ -140,7 +161,7 @@ always @ (posedge clk) begin
           if (!tx_tbe) begin
             // set interrupt request
             tx_irq <= #1 1'b1;
-				// data buffer empty again
+                // data buffer empty again
             //tx_tbe <= #1 1'b1;
             // generate start bit
             tx_txd <= #1 1'b0;
@@ -156,7 +177,7 @@ always @ (posedge clk) begin
         TX_SHIFT: begin
           // clear interrupt request, active by 1 cycle of clk
           tx_irq <= #1 1'b0;
-			 // count bit period
+             // count bit period
           if (tx_cnt == 16'd0) begin
             // check if any bit left to send out
             if (tx_shift == 16'd0) begin
@@ -207,14 +228,14 @@ always @ (posedge clk) begin
       rx_state <= #1 RX_IDLE;
       rx_rbf   <= #1 1'b0;
       rx_rxd   <= #1 1'b1;
-		rx_irq   <= #1 1'b0;
+        rx_irq   <= #1 1'b0;
       rx_ovrun <= #1 1'b0;
     end else begin
       case (rx_state)
         RX_IDLE : begin
           // clear interrupt request
           rx_irq <= #1 1'b0;
-			 // wait for start condition
+             // wait for start condition
           if (rx_rxd && !rxds) begin
             // setup received data format
             rx_shift <= #1 {serper[LONG_BIT], {9{1'b1}}};
@@ -257,7 +278,7 @@ always @ (posedge clk) begin
             if (rx_shift[0] == 1'b0) begin
               // set interrupt request flag
               rx_irq <= #1 1'b1;
-				  // handle OVRUN bit
+                  // handle OVRUN bit
               //rx_ovrun <= #1 rbfmirror;
               // update receive buffer
               rx_data[9] <= #1 rxds;
@@ -304,6 +325,5 @@ assign txd   = tx_txd;
 
 // reg bus output
 assign data_o = {serdatr, 1'b0, rx_data};
-
 
 endmodule
