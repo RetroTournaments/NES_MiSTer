@@ -610,7 +610,7 @@ reg snac_p2 = 0;
 // 6  IN    TX          TX+
 
 //assign USER_OUT[4] = 1'b1;
-assign USER_OUT[4] = 1'b0;
+//assign USER_OUT[4] = 1'b0;
 assign USER_OUT[5] = 1'b1;
 assign USER_OUT[6] = 1'b1;
 
@@ -668,7 +668,7 @@ staticio stcio(
     .clk(clk),
     .reset(reset_nes),
     .txd(USER_OUT[4]),
-    .rxd(USER_OUT[6])
+    .rxd(USER_IN[6])
 );
 
 //wire [15:0] uart_data;
