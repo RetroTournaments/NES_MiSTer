@@ -572,29 +572,30 @@ wire raw_serial = |status[52:51];
 wire extend_serial_d4 = status[52:51] == 2'b10;
 wire snac_3d_glasses = &status[52:51];
 
-wire serial_d4 = extend_serial_d4 ? |serial_d4_sr : ~USER_IN[4];
-reg [7:0] serial_d4_sr;
+//wire serial_d4 = extend_serial_d4 ? |serial_d4_sr : ~USER_IN[4];
+//wire serial_d4 = |serial_d4_sr;
+//reg [7:0] serial_d4_sr;
 reg snac_p2 = 0;
 
-always @(posedge clk) begin
-	reg [17:0] clk_cnt;
-
-	if (raw_serial) begin
-		if (~USER_IN[6])
-			snac_p2 <= 1;
-	end else begin
-		snac_p2 <= 0;
-	end
-
-	clk_cnt <= clk_cnt + 1'b1;
-	serial_d4_sr[0] <= ~USER_IN[4];
-
-	// Shift every 10ms
-	if (clk_cnt == 18'd214772) begin
-		serial_d4_sr <= serial_d4_sr << 1;
-		clk_cnt <= 0;
-	end
-end
+//always @(posedge clk) begin
+//	reg [17:0] clk_cnt;
+//
+//	if (raw_serial) begin
+//		if (~USER_IN[6])
+//			snac_p2 <= 1;
+//	end else begin
+//		snac_p2 <= 0;
+//	end
+//
+//	clk_cnt <= clk_cnt + 1'b1;
+//	//serial_d4_sr[0] <= ~USER_IN[4];
+//
+//	// Shift every 10ms
+//	if (clk_cnt == 18'd214772) begin
+//		serial_d4_sr <= serial_d4_sr << 1;
+//		clk_cnt <= 0;
+//	end
+//end
 
 // Indexes:
 // IDXDIR   Function    USBPIN
@@ -602,18 +603,23 @@ end
 // 1  OUT   Clk (P2)    D-
 // 2  BI    Glasses/D3  TX-
 // 3  OUT   CLK (P2)    GND_d
-// 4  IN    D4          RX+
+//// 4  IN    D4          RX+
+// 4  IN    RX          RX+
 // 5  IN    P1D0        RX-
-// 6  IN    P2D0        TX+
+//// 6  IN    P2D0        TX+
+// 6  IN    TX          TX+
 
-assign USER_OUT[4] = 1'b1;
+//assign USER_OUT[4] = 1'b1;
+assign USER_OUT[4] = 1'b0;
 assign USER_OUT[5] = 1'b1;
 assign USER_OUT[6] = 1'b1;
 
 reg [4:0] joypad1_data, joypad2_data;
 
-wire joy0_d0 = snac_p2 ? ~USER_IN[6] : joypad_bits[0];
-wire joy1_d0 = snac_p2 ? ~USER_IN[6] : joypad_bits2[0];
+//wire joy0_d0 = snac_p2 ? ~USER_IN[6] : joypad_bits[0];
+//wire joy1_d0 = snac_p2 ? ~USER_IN[6] : joypad_bits2[0];
+wire joy0_d0 = joypad_bits[0];
+wire joy1_d0 = joypad_bits2[0];
 
 always_comb begin
 	if (raw_serial) begin
@@ -622,7 +628,8 @@ always_comb begin
 		USER_OUT[2]  = snac_3d_glasses ? joypad_out[1] : 1'b1;
 		USER_OUT[3]  = ~joy_swap ? ~joypad_clock[0] : ~joypad_clock[1];
 		joypad1_data = {2'b0, mic, 1'b0, ~joy_swap ? joy0_d0 : ~USER_IN[5]};
-		joypad2_data = {serial_d4, snac_3d_glasses ? 1'b1 : ~USER_IN[2], 2'b00, ~joy_swap ? ~USER_IN[5] : joy1_d0};
+		//joypad2_data = {serial_d4, snac_3d_glasses ? 1'b1 : ~USER_IN[2], 2'b00, ~joy_swap ? ~USER_IN[5] : joy1_d0};
+		joypad2_data = joy1_d0;
 	end else begin
 		USER_OUT[0]  = 1'b1;
 		USER_OUT[1]  = 1'b1;
@@ -660,8 +667,8 @@ assign {UART_RTS, UART_DTR} = 1;
 staticio stcio(
     .clk(clk),
     .reset(reset_nes),
-    .txd(UART_TXD),
-    .rxd(UART_RXD)
+    .txd(USER_OUT[4]),
+    .rxd(USER_OUT[6])
 );
 
 //wire [15:0] uart_data;
